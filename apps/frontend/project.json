@@ -31,11 +31,8 @@
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm run lint",
-        "cwd": "apps/frontend"
-      }
+      "executor": "@nx/eslint:lint",
+      "options": {}
     }
   },
   "tags": []
