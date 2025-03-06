@@ -44,7 +44,7 @@ jobs:
         run: pnpm lint
 
       - name: Type check
-        run: pnpm tsc --noEmit
+        run: cd apps/frontend && pnpm type:check
 
       - name: Build
         run: pnpm build
@@ -61,7 +61,7 @@ jobs:
         run: pnpm test
 
       - name: Run tests with coverage
-        run: pnpm test:coverage
+        run: cd apps/frontend && pnpm test:coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
