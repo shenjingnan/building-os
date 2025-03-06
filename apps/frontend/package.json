@@ -5,7 +5,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nx serve",
     "dev:host": "nx serve --host",
     "preview": "nx preview",
     "clean": "rimraf dist node_modules",
