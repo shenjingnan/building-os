@@ -24,7 +24,7 @@ import { CardComponent } from './types';
 const moduleFiles = import.meta.glob('./*/spec.ts', { eager: true });
 
 // 自动注册所有找到的卡片
-Object.values(moduleFiles).forEach((module: any) => {
+Object.values(moduleFiles).forEach((module: unknown) => {
   // 遍历模块中的所有导出
   for (const key in module) {
     const value = module[key];
@@ -38,7 +38,7 @@ Object.values(moduleFiles).forEach((module: any) => {
       typeof value.meta === 'object' &&
       'matcher' in value.meta
     ) {
-      cardRegistry.register(value as CardComponent<any>);
+      cardRegistry.register(value as CardComponent<unknown>);
       break; // 假设每个模块只有一个卡片规格
     }
   }
