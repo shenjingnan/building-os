@@ -8,8 +8,6 @@
     "dev": "nx serve",
     "dev:host": "nx serve --host",
     "preview": "nx preview",
-    "build": "tsc -b && nx build",
-    "build:production": "tsc -b && nx build --configuration production",
     "clean": "rimraf dist node_modules",
     "lint": "nx lint",
     "lint:fix": "nx lint --fix",
