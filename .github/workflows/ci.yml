@@ -61,7 +61,7 @@ jobs:
         run: pnpm test
 
       - name: Run tests with coverage
-        run: cd apps/frontend && pnpm test:coverage
+        run: pnpm test:coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
