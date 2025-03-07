@@ -26,10 +26,19 @@
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/vite:test",
       "options": {
-        "command": "pnpm run test",
-        "cwd": "apps/frontend"
+        "passWithNoTests": true,
+        "reportsDirectory": "coverage/apps/frontend"
+      },
+      "configurations": {
+        "watch": {
+          "watch": true
+        },
+        "coverage": {
+          "coverage": true,
+          "reportsDirectory": "coverage/apps/frontend"
+        }
       }
     },
     "lint": {
