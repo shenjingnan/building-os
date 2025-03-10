@@ -9,7 +9,8 @@
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "tamasfe.even-better-toml"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -35,7 +36,7 @@
     "NPM_MIRROR": "${localEnv:NPM_MIRROR:https://registry.npmmirror.com}",
     "NVM_NODEJS_ORG_MIRROR": "${localEnv:NVM_NODEJS_ORG_MIRROR:https://npmmirror.com/mirrors/node/}"
   },
-  "forwardPorts": [5173],
+  "forwardPorts": [5173, 8000],
   "postCreateCommand": "chmod +x .devcontainer/post_create.sh && .devcontainer/post_create.sh",
   "remoteUser": "vscode"
 }

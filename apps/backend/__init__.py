@@ -2,8 +2,8 @@ __version__ = "0.1.0"
 __author__ = "shenjingnan"
 __all__ = ["useful_function", "UsefulClass"]
 
-from .module1 import useful_function
-from .module2 import UsefulClass
+from .utils import useful_function
+from .services import UsefulClass
 
 import logging
 

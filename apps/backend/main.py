@@ -1,4 +1,9 @@
 from fastapi import FastAPI
+from api import router, devices_router
+from db import Base, engine
+
+# 创建数据库表
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="智能家居控制系统",
@@ -6,15 +11,9 @@ app = FastAPI(
     version="0.1.0",
 )
 
-
-@app.get("/")
-async def root():
-    return {"message": "欢迎使用智能家居控制系统"}
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+# 包含API路由
+app.include_router(router)
+app.include_router(devices_router)
 
 
 if __name__ == "__main__":
