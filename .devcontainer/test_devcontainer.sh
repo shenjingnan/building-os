@@ -1,10 +1,10 @@
 #!/bin/bash
-# test_devcontainer.sh - 用于验证devcontainer环境的测试脚本
+# test_devcontainer.sh - Script for validating the DevContainer environment
 
-# 启用错误追踪和管道错误检测
+# Enable error tracking and pipeline error detection
 set -eo pipefail
 
-# 彩色输出函数
+# Colored output functions
 log_info() {
   echo -e "\033[0;34m[INFO]\033[0m $1"
 }
@@ -21,176 +21,176 @@ log_error() {
   echo -e "\033[0;31m[ERROR]\033[0m $1" >&2
 }
 
-# 错误处理函数
+# Error handling function
 handle_error() {
-  log_error "在第 $1 行发生错误，退出状态码: $2"
+  log_error "Error on line $1, exit code: $2"
   exit $2
 }
 
-# 设置错误处理陷阱
+# Set error handling trap
 trap 'handle_error ${LINENO} $?' ERR
 
-# 显示测试开始信息
-log_info "===== DevContainer 环境测试开始 ====="
-log_info "当前工作目录: $(pwd)"
-log_info "当前用户: $(whoami)"
-log_info "系统信息: $(uname -a)"
+# Display test start information
+log_info "===== DevContainer Environment Test Started ====="
+log_info "Current working directory: $(pwd)"
+log_info "Current user: $(whoami)"
+log_info "System information: $(uname -a)"
 
-# 测试基本系统工具
-log_info "测试基本系统工具..."
+# Test basic system tools
+log_info "Testing basic system tools..."
 TOOLS=("git" "curl" "bash" "python" "pip")
 for tool in "${TOOLS[@]}"; do
   if command -v $tool &> /dev/null; then
-    log_success "$tool 可用: $($tool --version 2>&1 | head -n 1)"
+    log_success "$tool available: $($tool --version 2>&1 | head -n 1)"
   else
-    log_error "$tool 不可用"
+    log_error "$tool not available"
     exit 1
   fi
 done
 
-# 测试 Python 环境
-log_info "测试 Python 环境..."
+# Test Python environment
+log_info "Testing Python environment..."
 if command -v python &> /dev/null; then
-  log_success "Python 版本: $(python --version)"
+  log_success "Python version: $(python --version)"
   
-  # 测试 pip
+  # Test pip
   if command -v pip &> /dev/null; then
-    log_success "pip 可用: $(pip --version)"
+    log_success "pip available: $(pip --version)"
   else
-    log_error "pip 不可用"
+    log_error "pip not available"
     exit 1
   fi
   
-  # 测试 uv
+  # Test uv
   if command -v uv &> /dev/null; then
-    log_success "uv 可用: $(uv --version)"
+    log_success "uv available: $(uv --version)"
   else
-    log_warning "uv 不可用，这可能会影响依赖管理"
+    log_warning "uv not available, this may affect dependency management"
   fi
   
-  # 测试 Python 虚拟环境
-  log_info "测试 Python 虚拟环境..."
+  # Test Python virtual environment
+  log_info "Testing Python virtual environment..."
   VENV_PATH="$HOME/.local/project-venv"
   if [ -d "$VENV_PATH" ]; then
-    log_success "Python 虚拟环境存在: $VENV_PATH"
+    log_success "Python virtual environment exists: $VENV_PATH"
     if [ -f "$VENV_PATH/bin/activate" ]; then
-      log_success "虚拟环境激活脚本存在"
+      log_success "Virtual environment activation script exists"
       source "$VENV_PATH/bin/activate"
-      log_success "虚拟环境已激活: $(which python)"
+      log_success "Virtual environment activated: $(which python)"
     else
-      log_error "虚拟环境激活脚本不存在"
+      log_error "Virtual environment activation script does not exist"
     fi
   else
-    log_warning "Python 虚拟环境不存在: $VENV_PATH"
+    log_warning "Python virtual environment does not exist: $VENV_PATH"
   fi
 else
-  log_error "Python 不可用"
+  log_error "Python not available"
   exit 1
 fi
 
-# 测试 Node.js 环境
-log_info "测试 Node.js 环境..."
+# Test Node.js environment
+log_info "Testing Node.js environment..."
 export NVM_DIR="/usr/local/nvm"
 
-# 检查 NVM 目录
+# Check NVM directory
 if [ -d "$NVM_DIR" ]; then
-  log_success "NVM 目录存在: $NVM_DIR"
+  log_success "NVM directory exists: $NVM_DIR"
   
-  # 检查 NVM 脚本
+  # Check NVM script
   if [ -s "$NVM_DIR/nvm.sh" ]; then
-    log_success "NVM 脚本存在"
+    log_success "NVM script exists"
     
-    # 加载 NVM
-    log_info "加载 NVM..."
-    set +e  # 临时禁用错误退出
+    # Load NVM
+    log_info "Loading NVM..."
+    set +e  # Temporarily disable error exit
     . "$NVM_DIR/nvm.sh"
     NVM_LOAD_RESULT=$?
-    set -e  # 重新启用错误退出
+    set -e  # Re-enable error exit
     
     if [ $NVM_LOAD_RESULT -eq 0 ]; then
-      log_success "NVM 加载成功: $(nvm --version)"
+      log_success "NVM loaded successfully: $(nvm --version)"
       
-      # 检查 Node.js
+      # Check Node.js
       if command -v node &> /dev/null; then
-        log_success "Node.js 可用: $(node -v)"
+        log_success "Node.js available: $(node -v)"
         
-        # 测试 Node.js 运行
-        node -e "console.log('Node.js 运行正常: ' + process.version)"
-        log_success "Node.js 运行测试通过"
+        # Test Node.js execution
+        node -e "console.log('Node.js running normally: ' + process.version)"
+        log_success "Node.js execution test passed"
         
-        # 检查 npm
+        # Check npm
         if command -v npm &> /dev/null; then
-          log_success "npm 可用: $(npm -v)"
+          log_success "npm available: $(npm -v)"
         else
-          log_error "npm 不可用"
+          log_error "npm not available"
           exit 1
         fi
         
-        # 检查 pnpm
+        # Check pnpm
         if command -v pnpm &> /dev/null; then
-          log_success "pnpm 可用: $(pnpm -v)"
+          log_success "pnpm available: $(pnpm -v)"
         else
-          log_warning "pnpm 不可用，这可能会影响项目依赖管理"
+          log_warning "pnpm not available, this may affect project dependency management"
         fi
       else
-        log_error "Node.js 不可用"
+        log_error "Node.js not available"
         exit 1
       fi
     else
-      log_error "NVM 加载失败"
+      log_error "NVM loading failed"
       exit 1
     fi
   else
-    log_error "NVM 脚本不存在: $NVM_DIR/nvm.sh"
+    log_error "NVM script does not exist: $NVM_DIR/nvm.sh"
     exit 1
   fi
 else
-  log_error "NVM 目录不存在: $NVM_DIR"
+  log_error "NVM directory does not exist: $NVM_DIR"
   exit 1
 fi
 
-# 测试项目配置
-log_info "测试项目配置..."
+# Test project configuration
+log_info "Testing project configuration..."
 
-# 检查 package.json
+# Check package.json
 if [ -f "package.json" ]; then
-  log_success "package.json 存在"
+  log_success "package.json exists"
 else
-  log_warning "package.json 不存在，这可能是正常的，取决于当前目录"
+  log_warning "package.json does not exist, this may be normal depending on the current directory"
 fi
 
-# 检查 .nvmrc
+# Check .nvmrc
 if [ -f ".nvmrc" ]; then
-  log_success ".nvmrc 存在: $(cat .nvmrc)"
+  log_success ".nvmrc exists: $(cat .nvmrc)"
 else
-  log_warning ".nvmrc 不存在，这可能是正常的，取决于当前目录"
+  log_warning ".nvmrc does not exist, this may be normal depending on the current directory"
 fi
 
-# 测试 shell 配置
-log_info "测试 shell 配置..."
+# Test shell configuration
+log_info "Testing shell configuration..."
 SHELL_CONFIG_FILES=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile")
 for config_file in "${SHELL_CONFIG_FILES[@]}"; do
   if [ -f "$config_file" ]; then
-    log_success "$config_file 存在"
+    log_success "$config_file exists"
     
-    # 检查 NVM 配置
+    # Check NVM configuration
     if grep -q "NVM_DIR" "$config_file"; then
-      log_success "$config_file 中包含 NVM 配置"
+      log_success "$config_file contains NVM configuration"
     else
-      log_warning "$config_file 中不包含 NVM 配置"
+      log_warning "$config_file does not contain NVM configuration"
     fi
     
-    # 检查 Python 虚拟环境配置
+    # Check Python virtual environment configuration
     if grep -q "VIRTUAL_ENV" "$config_file"; then
-      log_success "$config_file 中包含 Python 虚拟环境配置"
+      log_success "$config_file contains Python virtual environment configuration"
     else
-      log_warning "$config_file 中不包含 Python 虚拟环境配置"
+      log_warning "$config_file does not contain Python virtual environment configuration"
     fi
   else
-    log_warning "$config_file 不存在"
+    log_warning "$config_file does not exist"
   fi
 done
 
-# 测试完成
-log_success "===== DevContainer 环境测试完成 ====="
+# Test completed
+log_success "===== DevContainer Environment Test Completed ====="
 exit 0 

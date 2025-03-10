@@ -1,89 +1,89 @@
-# DevContainer 测试指南
+# DevContainer Testing Guide
 
-本目录包含了用于构建和测试开发容器（DevContainer）的配置文件和脚本。
+This directory contains configuration files and scripts for building and testing the development container (DevContainer).
 
-## 文件结构
+## File Structure
 
-- `devcontainer.json` - VS Code DevContainer 配置文件
-- `Dockerfile` - 用于构建开发容器的 Docker 配置
-- `post_create.sh` - 容器创建后执行的用户级环境设置脚本
-- `setup_mirrors.sh` - 配置镜像源的脚本（适用于中国大陆网络环境）
-- `test_devcontainer.sh` - 用于验证 DevContainer 环境的测试脚本
-- `.env` / `.env.cn` - 环境变量配置文件
+- `devcontainer.json` - VS Code DevContainer configuration file
+- `Dockerfile` - Docker configuration for building the development container
+- `post_create.sh` - User-level environment setup script executed after container creation
+- `setup_mirrors.sh` - Script for configuring mirror sources (suitable for mainland China network environment)
+- `test_devcontainer.sh` - Script for validating the DevContainer environment
+- `.env` / `.env.cn` - Environment variable configuration files
 
-## 自动化测试
+## Automated Testing
 
-我们使用 GitHub Actions 来自动测试 DevContainer 的构建和功能。测试工作流定义在 `.github/workflows/devcontainer-test.yml` 文件中。
+We use GitHub Actions to automatically test the DevContainer build and functionality. The test workflow is defined in the `.github/workflows/devcontainer-test.yml` file.
 
-测试工作流会在以下情况下触发：
-- 当对 `.devcontainer` 目录中的文件进行修改并推送到 `main` 分支时
-- 当创建包含 `.devcontainer` 目录修改的 Pull Request 时
-- 手动触发工作流
+The test workflow is triggered in the following cases:
+- When changes to files in the `.devcontainer` directory are pushed to the `main` branch
+- When a Pull Request containing changes to the `.devcontainer` directory is created
+- When the workflow is manually triggered
 
-## 本地测试
+## Local Testing
 
-您可以在本地测试 DevContainer 的构建和功能：
+You can test the DevContainer build and functionality locally:
 
-### 构建 DevContainer 镜像
+### Building the DevContainer Image
 
 ```bash
 cd /path/to/your/project
 docker build -t devcontainer-test -f .devcontainer/Dockerfile .
 ```
 
-### 运行测试脚本
+### Running the Test Script
 
 ```bash
-# 确保测试脚本可执行
+# Ensure the test script is executable
 chmod +x .devcontainer/test_devcontainer.sh
 
-# 在容器中运行测试脚本
+# Run the test script in the container
 docker run --rm -v $(pwd):/workspace devcontainer-test bash -c "cd /workspace && .devcontainer/test_devcontainer.sh"
 ```
 
-### 测试 post_create.sh 脚本
+### Testing the post_create.sh Script
 
 ```bash
-# 创建临时目录模拟工作区
+# Create a temporary directory to simulate the workspace
 mkdir -p /tmp/workspace
 cp -r .devcontainer /tmp/workspace/
-cp -r package.json /tmp/workspace/ # 如果存在
-cp -r .nvmrc /tmp/workspace/ # 如果存在
+cp -r package.json /tmp/workspace/ # if exists
+cp -r .nvmrc /tmp/workspace/ # if exists
 
-# 在容器中运行 post_create.sh 脚本
+# Run the post_create.sh script in the container
 docker run --rm -v /tmp/workspace:/workspace devcontainer-test bash -c "cd /workspace && chmod +x .devcontainer/post_create.sh && .devcontainer/post_create.sh"
 ```
 
-## 常见问题排查
+## Troubleshooting Common Issues
 
-### 1. NVM 或 Node.js 不可用
+### 1. NVM or Node.js Not Available
 
-检查 `post_create.sh` 脚本中的 NVM 配置是否正确，特别是 `NVM_DIR` 环境变量的设置。
+Check if the NVM configuration in the `post_create.sh` script is correct, especially the `NVM_DIR` environment variable setting.
 
-### 2. Python 虚拟环境问题
+### 2. Python Virtual Environment Issues
 
-确保 `post_create.sh` 脚本中正确设置了 `VIRTUAL_ENV` 路径，并且脚本有权限创建和激活虚拟环境。
+Ensure that the `VIRTUAL_ENV` path is correctly set in the `post_create.sh` script, and that the script has permission to create and activate the virtual environment.
 
-### 3. 镜像源配置问题
+### 3. Mirror Source Configuration Issues
 
-如果您在中国大陆网络环境中遇到下载问题，请检查 `.env.cn` 文件中的镜像源配置，并确保 `setup_mirrors.sh` 脚本正确执行。
+If you encounter download problems in mainland China network environment, check the mirror source configuration in the `.env.cn` file and ensure the `setup_mirrors.sh` script is executed correctly.
 
-## 自定义测试
+## Custom Testing
 
-您可以根据项目需求修改 `test_devcontainer.sh` 脚本，添加更多测试项目。例如：
+You can modify the `test_devcontainer.sh` script according to project requirements to add more test items. For example:
 
-- 测试特定的项目依赖是否可用
-- 验证特定的开发工具是否正确配置
-- 检查数据库连接等
+- Testing if specific project dependencies are available
+- Verifying if specific development tools are correctly configured
+- Checking database connections, etc.
 
-## 贡献指南
+## Contribution Guidelines
 
-如果您对 DevContainer 配置有改进建议，请：
+If you have suggestions for improving the DevContainer configuration, please:
 
-1. Fork 本仓库
-2. 创建您的功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建一个 Pull Request
+1. Fork this repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Create a Pull Request
 
-请确保在提交 PR 之前，您的更改已通过 DevContainer 测试工作流。 
+Please ensure your changes have passed the DevContainer test workflow before submitting a PR. 

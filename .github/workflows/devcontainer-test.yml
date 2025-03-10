@@ -1,4 +1,4 @@
-name: DevContainer 测试
+name: DevContainer Test
 
 on:
   push:
@@ -11,105 +11,105 @@ on:
     paths:
       - '.devcontainer/**'
       - '.github/workflows/devcontainer-test.yml'
-  # 允许手动触发工作流
+  # Allow manual workflow triggers
   workflow_dispatch:
 
 jobs:
   test-devcontainer:
-    name: 测试 DevContainer
+    name: Test DevContainer
     runs-on: ubuntu-latest
     
     steps:
-      - name: 检出代码
+      - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: 设置 Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: 构建 DevContainer 镜像
+      - name: Build DevContainer image
         id: build-image
         run: |
-          echo "开始构建 DevContainer 镜像..."
+          echo "Starting DevContainer image build..."
           cd .devcontainer
           docker build -t devcontainer-test -f Dockerfile ..
-          echo "DevContainer 镜像构建完成"
+          echo "DevContainer image build completed"
       
-      - name: 验证基本环境
+      - name: Verify basic environment
         run: |
-          echo "验证 DevContainer 基本环境..."
-          docker run --rm devcontainer-test bash -c "echo '系统信息:' && uname -a && echo '已安装软件:' && apt list --installed | grep -E 'python|git|curl|cargo'"
+          echo "Verifying DevContainer basic environment..."
+          docker run --rm devcontainer-test bash -c "echo 'System information:' && uname -a && echo 'Installed software:' && apt list --installed | grep -E 'python|git|curl|cargo'"
       
-      - name: 验证 NVM 和 Node.js 环境
+      - name: Verify NVM and Node.js environment
         run: |
-          echo "验证 NVM 和 Node.js 环境..."
-          docker run --rm devcontainer-test bash -c "export NVM_DIR=/usr/local/nvm && [ -s \$NVM_DIR/nvm.sh ] && . \$NVM_DIR/nvm.sh && echo 'NVM 版本:' && nvm --version && echo 'Node.js 版本:' && node -v && echo 'npm 版本:' && npm -v && echo 'pnpm 版本:' && pnpm -v"
+          echo "Verifying NVM and Node.js environment..."
+          docker run --rm devcontainer-test bash -c "export NVM_DIR=/usr/local/nvm && [ -s \$NVM_DIR/nvm.sh ] && . \$NVM_DIR/nvm.sh && echo 'NVM version:' && nvm --version && echo 'Node.js version:' && node -v && echo 'npm version:' && npm -v && echo 'pnpm version:' && pnpm -v"
       
-      - name: 验证 Python 环境
+      - name: Verify Python environment
         run: |
-          echo "验证 Python 环境..."
-          docker run --rm devcontainer-test bash -c "echo 'Python 版本:' && python --version && echo 'pip 版本:' && pip --version && echo 'uv 版本:' && uv --version"
+          echo "Verifying Python environment..."
+          docker run --rm devcontainer-test bash -c "echo 'Python version:' && python --version && echo 'pip version:' && pip --version && echo 'uv version:' && uv --version"
       
-      - name: 测试 post_create.sh 脚本
+      - name: Test post_create.sh script
         run: |
-          echo "测试 post_create.sh 脚本..."
-          # 创建临时目录模拟工作区
+          echo "Testing post_create.sh script..."
+          # Create temporary directory to simulate workspace
           mkdir -p /tmp/workspace
           cp -r .devcontainer /tmp/workspace/
           cp -r package.json /tmp/workspace/ || true
           cp -r .nvmrc /tmp/workspace/ || true
           
-          # 在容器中运行 post_create.sh 脚本
+          # Run post_create.sh script in container
           docker run --rm -v /tmp/workspace:/workspace devcontainer-test bash -c "cd /workspace && chmod +x .devcontainer/post_create.sh && .devcontainer/post_create.sh"
           
-          echo "post_create.sh 脚本测试完成"
+          echo "post_create.sh script test completed"
       
-      - name: 使用测试脚本进行全面测试
+      - name: Run comprehensive test with test script
         run: |
-          echo "使用测试脚本进行全面测试..."
-          # 确保测试脚本可执行
+          echo "Running comprehensive test with test script..."
+          # Ensure test script is executable
           chmod +x .devcontainer/test_devcontainer.sh
           
-          # 在容器中运行测试脚本
+          # Run test script in container
           docker run --rm -v $(pwd):/workspace devcontainer-test bash -c "cd /workspace && .devcontainer/test_devcontainer.sh"
       
-      - name: 测试 VS Code 扩展安装
+      - name: Test VS Code extensions installation
         run: |
-          echo "测试 VS Code 扩展安装..."
-          # 从 devcontainer.json 提取扩展列表
+          echo "Testing VS Code extensions installation..."
+          # Extract extensions list from devcontainer.json
           EXTENSIONS=$(grep -oP '"extensions": \[\K[^\]]*' .devcontainer/devcontainer.json | tr -d '\n' | sed 's/,/ /g' | tr -d '"')
-          echo "需要测试的扩展: $EXTENSIONS"
+          echo "Extensions to test: $EXTENSIONS"
           
-          # 创建测试脚本
+          # Create test script
           cat > test_extensions.sh << 'EOF'
           #!/bin/bash
           set -e
           
-          echo "===== VS Code 扩展测试 ====="
-          # 这里只是模拟测试，实际上容器中可能没有安装 code 命令
-          # 在实际的 devcontainer 中，VS Code 服务器会处理扩展安装
+          echo "===== VS Code Extensions Test ====="
+          # This is just a simulation test, as the container may not have the code command installed
+          # In an actual devcontainer, VS Code server would handle extension installation
           
-          echo "在实际的 devcontainer 中，以下扩展将被安装:"
+          echo "In an actual devcontainer, the following extensions would be installed:"
           cat .devcontainer/devcontainer.json | grep -A 20 '"extensions":'
           
-          echo "===== VS Code 扩展测试完成 ====="
+          echo "===== VS Code Extensions Test Completed ====="
           EOF
           
           chmod +x test_extensions.sh
           
-          # 在容器中运行测试脚本
+          # Run test script in container
           docker run --rm -v $(pwd)/test_extensions.sh:/test_extensions.sh -v $(pwd)/.devcontainer/devcontainer.json:/devcontainer.json devcontainer-test bash -c "/test_extensions.sh"
       
-      - name: 生成测试报告
+      - name: Generate test report
         run: |
-          echo "生成测试报告..."
-          echo "DevContainer 测试完成，所有测试通过！" > devcontainer_test_report.txt
-          echo "测试时间: $(date)" >> devcontainer_test_report.txt
-          echo "Docker 版本: $(docker --version)" >> devcontainer_test_report.txt
+          echo "Generating test report..."
+          echo "DevContainer test completed, all tests passed!" > devcontainer_test_report.txt
+          echo "Test time: $(date)" >> devcontainer_test_report.txt
+          echo "Docker version: $(docker --version)" >> devcontainer_test_report.txt
           
-          # 添加到工作流输出
+          # Add to workflow output
           cat devcontainer_test_report.txt
       
-      - name: 上传测试报告
+      - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
           name: devcontainer-test-report

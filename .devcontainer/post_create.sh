@@ -1,10 +1,10 @@
 #!/bin/bash
-# post_create.sh - 容器创建后执行的用户级环境设置脚本
+# post_create.sh - User-level environment setup script executed after container creation
 
-# 启用错误追踪和管道错误检测
+# Enable error tracking and pipeline error detection
 set -eo pipefail
 
-# 彩色输出函数
+# Colored output functions
 log_info() {
   echo -e "\033[0;34m[INFO]\033[0m $1"
 }
@@ -21,244 +21,244 @@ log_error() {
   echo -e "\033[0;31m[ERROR]\033[0m $1" >&2
 }
 
-# 错误处理函数
+# Error handling function
 handle_error() {
-  log_error "在第 $1 行发生错误，退出状态码: $2"
+  log_error "Error on line $1, exit code: $2"
   exit $2
 }
 
-# 设置错误处理陷阱
+# Set error handling trap
 trap 'handle_error ${LINENO} $?' ERR
 
-# 显示脚本开始执行的信息
-log_info "开始执行用户级环境设置..."
-log_info "当前工作目录: $(pwd)"
-log_info "当前用户: $(whoami)"
+# Display script execution start information
+log_info "Starting user-level environment setup..."
+log_info "Current working directory: $(pwd)"
+log_info "Current user: $(whoami)"
 
-# ===== Node.js环境设置部分 =====
-log_info "开始设置Node.js环境..."
+# ===== Node.js Environment Setup =====
+log_info "Setting up Node.js environment..."
 
-# 设置环境变量
+# Set environment variables
 export NVM_DIR="/usr/local/nvm"
-log_info "加载环境变量..."
+log_info "Loading environment variables..."
 
-# 尝试加载.env文件中的环境变量（如果存在）
+# Try to load environment variables from .env file (if exists)
 if [ -f "$(pwd)/.env" ]; then
-  log_info "加载.env文件中的环境变量"
-  set +e  # 临时禁用错误退出
+  log_info "Loading environment variables from .env file"
+  set +e  # Temporarily disable error exit
   export $(grep -v '^#' "$(pwd)/.env" | xargs 2>/dev/null || true)
-  set -e  # 重新启用错误退出
+  set -e  # Re-enable error exit
 else
-  log_info "未找到.env文件，跳过环境变量加载"
+  log_info ".env file not found, skipping environment variable loading"
 fi
 
-# 加载NVM
-log_info "检查NVM安装..."
+# Load NVM
+log_info "Checking NVM installation..."
 if [ ! -f "$NVM_DIR/nvm.sh" ]; then
-  log_error "NVM脚本未找到: $NVM_DIR/nvm.sh"
-  log_info "$NVM_DIR目录内容:"
+  log_error "NVM script not found: $NVM_DIR/nvm.sh"
+  log_info "$NVM_DIR directory contents:"
   ls -la $NVM_DIR || true
-  log_error "NVM未正确安装，请检查Dockerfile中的NVM安装步骤"
+  log_error "NVM not properly installed, please check NVM installation steps in Dockerfile"
   exit 1
 fi
 
-log_info "NVM目录内容:"
+log_info "NVM directory contents:"
 ls -la $NVM_DIR
 
-log_info "NVM脚本权限:"
+log_info "NVM script permissions:"
 ls -la $NVM_DIR/nvm.sh
 
-# 确保脚本可执行
-log_info "确保NVM脚本可执行..."
+# Ensure script is executable
+log_info "Ensuring NVM script is executable..."
 chmod +x $NVM_DIR/nvm.sh
 
-log_info "加载NVM脚本: $NVM_DIR/nvm.sh"
-# 使用更安全的方式加载NVM脚本
-set +e  # 临时禁用错误退出
+log_info "Loading NVM script: $NVM_DIR/nvm.sh"
+# Use safer way to load NVM script
+set +e  # Temporarily disable error exit
 . "$NVM_DIR/nvm.sh"
 NVM_LOAD_RESULT=$?
-set -e  # 重新启用错误退出
+set -e  # Re-enable error exit
 
 if [ $NVM_LOAD_RESULT -ne 0 ]; then
-  log_error "加载NVM脚本失败，退出代码: $NVM_LOAD_RESULT"
-  log_info "尝试查看NVM脚本内容的前几行:"
+  log_error "Failed to load NVM script, exit code: $NVM_LOAD_RESULT"
+  log_info "Trying to view the first few lines of NVM script:"
   head -n 20 "$NVM_DIR/nvm.sh"
   
-  # 尝试使用bash明确执行脚本
-  log_info "尝试使用bash明确执行NVM脚本..."
-  bash "$NVM_DIR/nvm.sh" || log_warning "使用bash执行NVM脚本也失败了"
+  # Try to explicitly execute script with bash
+  log_info "Trying to explicitly execute NVM script with bash..."
+  bash "$NVM_DIR/nvm.sh" || log_warning "Executing NVM script with bash also failed"
   
-  # 尝试直接设置PATH
-  log_info "尝试直接设置PATH以包含Node.js bin目录..."
+  # Try to directly set PATH
+  log_info "Trying to directly set PATH to include Node.js bin directory..."
   if [ -d "$NVM_DIR/versions/node" ]; then
     NODE_DIRS=$(find "$NVM_DIR/versions/node" -maxdepth 1 -type d | sort -r)
     if [ -n "$NODE_DIRS" ]; then
       LATEST_NODE=$(echo "$NODE_DIRS" | head -n 1)
       if [ -d "$LATEST_NODE/bin" ]; then
         export PATH="$LATEST_NODE/bin:$PATH"
-        log_info "已将 $LATEST_NODE/bin 添加到PATH"
+        log_info "Added $LATEST_NODE/bin to PATH"
       fi
     fi
   fi
   
-  # 检查是否有Node.js可用
+  # Check if Node.js is available
   if command -v node >/dev/null 2>&1; then
-    log_success "找到Node.js: $(node -v)"
+    log_success "Found Node.js: $(node -v)"
   else
-    log_error "无法加载NVM，也无法找到Node.js，环境设置失败"
+    log_error "Unable to load NVM or find Node.js, environment setup failed"
     exit 1
   fi
 else
-  log_success "NVM脚本加载成功"
+  log_success "NVM script loaded successfully"
 fi
 
-# 加载NVM自动补全（如果存在）
+# Load NVM auto-completion (if exists)
 if [ -s "$NVM_DIR/bash_completion" ]; then
-  log_info "加载NVM自动补全"
-  set +e  # 临时禁用错误退出
+  log_info "Loading NVM auto-completion"
+  set +e  # Temporarily disable error exit
   source "$NVM_DIR/bash_completion" 
   if [ $? -ne 0 ]; then
-    log_warning "加载NVM自动补全失败，但继续执行"
+    log_warning "Failed to load NVM auto-completion, but continuing"
   else
-    log_info "NVM自动补全加载成功"
+    log_info "NVM auto-completion loaded successfully"
   fi
-  set -e  # 重新启用错误退出
+  set -e  # Re-enable error exit
 fi
 
-# 验证NVM是否可用
+# Verify NVM is available
 if command -v nvm >/dev/null 2>&1; then
-  log_success "NVM可用: $(nvm --version)"
+  log_success "NVM available: $(nvm --version)"
 else
-  log_warning "NVM命令不可用，尝试直接使用Node.js"
-  # 检查是否有Node.js可用
+  log_warning "NVM command not available, trying to use Node.js directly"
+  # Check if Node.js is available
   if command -v node >/dev/null 2>&1; then
-    log_success "找到Node.js: $(node -v)"
+    log_success "Found Node.js: $(node -v)"
   else
-    log_error "无法找到Node.js，环境设置失败"
+    log_error "Unable to find Node.js, environment setup failed"
     exit 1
   fi
 fi
 
-# 安装Node.js
-log_info "安装Node.js..."
+# Install Node.js
+log_info "Installing Node.js..."
 if command -v nvm >/dev/null 2>&1; then
-  # 如果NVM可用，使用NVM安装Node.js
+  # If NVM is available, use NVM to install Node.js
   if [ -f .nvmrc ]; then
     NODE_VERSION=$(cat .nvmrc)
-    log_info "从.nvmrc文件中检测到Node.js版本: $NODE_VERSION"
+    log_info "Detected Node.js version from .nvmrc file: $NODE_VERSION"
     
-    # 尝试安装指定版本
-    set +e  # 临时禁用错误退出
+    # Try to install specified version
+    set +e  # Temporarily disable error exit
     nvm install "$NODE_VERSION"
     INSTALL_RESULT=$?
-    set -e  # 重新启用错误退出
+    set -e  # Re-enable error exit
     
     if [ $INSTALL_RESULT -eq 0 ]; then
-      log_success "成功安装Node.js $NODE_VERSION"
+      log_success "Successfully installed Node.js $NODE_VERSION"
       nvm alias default "$NODE_VERSION"
       nvm use "$NODE_VERSION"
     else
-      log_warning "安装Node.js $NODE_VERSION失败，回退到LTS版本"
-      set +e  # 临时禁用错误退出
+      log_warning "Failed to install Node.js $NODE_VERSION, falling back to LTS version"
+      set +e  # Temporarily disable error exit
       nvm install --lts
       nvm use --lts
-      set -e  # 重新启用错误退出
+      set -e  # Re-enable error exit
     fi
   else
-    log_info "未找到.nvmrc文件，安装LTS版本"
-    set +e  # 临时禁用错误退出
+    log_info ".nvmrc file not found, installing LTS version"
+    set +e  # Temporarily disable error exit
     nvm install --lts
     nvm use --lts
-    set -e  # 重新启用错误退出
+    set -e  # Re-enable error exit
   fi
 else
-  log_info "NVM不可用，跳过Node.js安装"
+  log_info "NVM not available, skipping Node.js installation"
 fi
 
-# 设置Python虚拟环境
-log_info "设置Python虚拟环境..."
+# Set up Python virtual environment
+log_info "Setting up Python virtual environment..."
 export VIRTUAL_ENV="$HOME/.local/project-venv"
 if command -v uv >/dev/null 2>&1; then
-  log_info "使用uv创建虚拟环境: $VIRTUAL_ENV"
+  log_info "Using uv to create virtual environment: $VIRTUAL_ENV"
   uv venv "$VIRTUAL_ENV"
 else
-  log_info "uv未安装，使用python venv模块创建虚拟环境"
+  log_info "uv not installed, using python venv module to create virtual environment"
   python -m venv "$VIRTUAL_ENV"
 fi
 
-# 更新shell配置文件
-log_info "更新shell配置文件..."
+# Update shell configuration files
+log_info "Updating shell configuration files..."
 
-# 创建shell配置更新函数
+# Create shell config update function
 update_shell_config() {
   local config_file="$1"
   local config_exists=false
   
-  # 检查配置文件是否存在
+  # Check if config file exists
   if [ -f "$config_file" ]; then
     config_exists=true
   else
     touch "$config_file"
   fi
   
-  # 添加Python虚拟环境路径
+  # Add Python virtual environment path
   if ! grep -q "VIRTUAL_ENV=\"$VIRTUAL_ENV\"" "$config_file"; then
-    echo "# Python虚拟环境配置" >> "$config_file"
+    echo "# Python virtual environment configuration" >> "$config_file"
     echo "export VIRTUAL_ENV=\"$VIRTUAL_ENV\"" >> "$config_file"
     echo "export PATH=\"\$VIRTUAL_ENV/bin:\$PATH\"" >> "$config_file"
     echo "" >> "$config_file"
   fi
   
-  # 添加NVM配置
+  # Add NVM configuration
   if ! grep -q "NVM_DIR=\"$NVM_DIR\"" "$config_file"; then
-    echo "# NVM配置" >> "$config_file"
+    echo "# NVM configuration" >> "$config_file"
     echo "export NVM_DIR=\"$NVM_DIR\"" >> "$config_file"
-    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"  # 加载NVM" >> "$config_file"
-    echo "[ -s \"\$NVM_DIR/bash_completion\" ] && . \"\$NVM_DIR/bash_completion\"  # 加载NVM自动补全" >> "$config_file"
+    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"  # Load NVM" >> "$config_file"
+    echo "[ -s \"\$NVM_DIR/bash_completion\" ] && . \"\$NVM_DIR/bash_completion\"  # Load NVM auto-completion" >> "$config_file"
     echo "" >> "$config_file"
   fi
 }
 
-# 更新bash配置
+# Update bash configuration
 update_shell_config "$HOME/.bashrc"
-log_info "已更新Bash配置"
+log_info "Bash configuration updated"
 
-# 显示Node.js和npm版本
-NODE_VERSION=$(node -v 2>/dev/null || echo "未安装")
-NPM_VERSION=$(npm -v 2>/dev/null || echo "未安装")
-log_success "Node.js环境设置完成！"
-log_info "Node.js版本: $NODE_VERSION"
-log_info "npm版本: $NPM_VERSION"
-log_info "Python虚拟环境: $VIRTUAL_ENV"
+# Display Node.js and npm versions
+NODE_VERSION=$(node -v 2>/dev/null || echo "not installed")
+NPM_VERSION=$(npm -v 2>/dev/null || echo "not installed")
+log_success "Node.js environment setup complete!"
+log_info "Node.js version: $NODE_VERSION"
+log_info "npm version: $NPM_VERSION"
+log_info "Python virtual environment: $VIRTUAL_ENV"
 
-# ===== 项目依赖安装部分 =====
-# 检查项目依赖
+# ===== Project Dependencies Installation =====
+# Check project dependencies
 if command -v npm >/dev/null 2>&1; then
   if ! command -v pnpm &> /dev/null; then
-    log_info "安装pnpm..."
+    log_info "Installing pnpm..."
     npm install -g pnpm
   else
-    log_info "pnpm已安装: $(pnpm --version)"
+    log_info "pnpm already installed: $(pnpm --version)"
   fi
 
   if [ -f "package.json" ]; then
-    log_info "检测到package.json，准备安装项目依赖..."
+    log_info "Detected package.json, preparing to install project dependencies..."
     pnpm install
   fi
 else
-  log_warning "npm不可用，跳过pnpm安装和项目依赖安装"
+  log_warning "npm not available, skipping pnpm installation and project dependencies installation"
 fi
 
-# ===== Python依赖安装部分 =====
-log_info "开始安装Python依赖..."
+# ===== Python Dependencies Installation =====
+log_info "Starting Python dependencies installation..."
 
-# 确保虚拟环境已激活
+# Ensure virtual environment is activated
 if [ -d "$VIRTUAL_ENV" ]; then
-  log_info "激活Python虚拟环境: $VIRTUAL_ENV"
+  log_info "Activating Python virtual environment: $VIRTUAL_ENV"
   source "$VIRTUAL_ENV/bin/activate"
 else
-  log_warning "虚拟环境目录不存在: $VIRTUAL_ENV"
-  log_info "重新创建虚拟环境..."
+  log_warning "Virtual environment directory does not exist: $VIRTUAL_ENV"
+  log_info "Recreating virtual environment..."
   if command -v uv >/dev/null 2>&1; then
     uv venv "$VIRTUAL_ENV"
   else
@@ -267,16 +267,16 @@ else
   source "$VIRTUAL_ENV/bin/activate"
 fi
 
-# 安装uv（如果未安装）
+# Install uv (if not installed)
 if ! command -v uv >/dev/null 2>&1; then
-  log_info "安装uv包管理器..."
+  log_info "Installing uv package manager..."
   pip install uv
-  log_success "uv安装完成: $(uv --version)"
+  log_success "uv installation complete: $(uv --version)"
 else
-  log_info "uv已安装: $(uv --version)"
+  log_info "uv already installed: $(uv --version)"
 fi
 
-# 检查后端项目并安装依赖
+# Check backend project and install dependencies
 BACKEND_DIR="/workspaces/building-os/apps/backend"
-log_info "使用uv安装依赖..."
+log_info "Using uv to install dependencies..."
 uv pip install -e $BACKEND_DIR
