@@ -34,3 +34,8 @@ coverage
 # python
 __pycache__
 .pnpm-store
+*.egg-info
+*.pyc
+.pytest_cache
+.coverage
+htmlcov/

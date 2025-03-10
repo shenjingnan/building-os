@@ -223,12 +223,6 @@ update_shell_config() {
 update_shell_config "$HOME/.bashrc"
 log_info "已更新Bash配置"
 
-# 如果zsh存在，也更新zsh配置
-if command -v zsh >/dev/null 2>&1; then
-  update_shell_config "$HOME/.zshrc"
-  log_info "已更新Zsh配置"
-fi
-
 # 显示Node.js和npm版本
 NODE_VERSION=$(node -v 2>/dev/null || echo "未安装")
 NPM_VERSION=$(npm -v 2>/dev/null || echo "未安装")
@@ -249,17 +243,40 @@ if command -v npm >/dev/null 2>&1; then
 
   if [ -f "package.json" ]; then
     log_info "检测到package.json，准备安装项目依赖..."
-    if command -v pnpm &> /dev/null; then
-      log_info "使用pnpm安装依赖..."
-      # 使用--no-strict-peer-dependencies和--network-timeout选项
-      pnpm install --no-strict-peer-dependencies --network-timeout 100000
-    else
-      log_info "使用npm安装依赖..."
-      npm install
-    fi
+    pnpm install
   fi
 else
   log_warning "npm不可用，跳过pnpm安装和项目依赖安装"
 fi
 
-log_success "开发环境设置完成！"
+# ===== Python依赖安装部分 =====
+log_info "开始安装Python依赖..."
+
+# 确保虚拟环境已激活
+if [ -d "$VIRTUAL_ENV" ]; then
+  log_info "激活Python虚拟环境: $VIRTUAL_ENV"
+  source "$VIRTUAL_ENV/bin/activate"
+else
+  log_warning "虚拟环境目录不存在: $VIRTUAL_ENV"
+  log_info "重新创建虚拟环境..."
+  if command -v uv >/dev/null 2>&1; then
+    uv venv "$VIRTUAL_ENV"
+  else
+    python -m venv "$VIRTUAL_ENV"
+  fi
+  source "$VIRTUAL_ENV/bin/activate"
+fi
+
+# 安装uv（如果未安装）
+if ! command -v uv >/dev/null 2>&1; then
+  log_info "安装uv包管理器..."
+  pip install uv
+  log_success "uv安装完成: $(uv --version)"
+else
+  log_info "uv已安装: $(uv --version)"
+fi
+
+# 检查后端项目并安装依赖
+BACKEND_DIR="/workspaces/building-os/apps/backend"
+log_info "使用uv安装依赖..."
+uv pip install -e $BACKEND_DIR

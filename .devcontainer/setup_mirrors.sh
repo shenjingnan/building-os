@@ -7,11 +7,6 @@ echo "配置中国镜像源..."
 if [ -n "$DEBIAN_MIRROR" ]; then
     echo "配置 APT 源: $DEBIAN_MIRROR (使用传统格式)"
     
-    # 备份现有的sources.list文件（如果尚未备份）
-    if [ -f /etc/apt/sources.list ] && [ ! -f /etc/apt/sources.list.bak ]; then
-        cp /etc/apt/sources.list /etc/apt/sources.list.bak
-    fi
-    
     # 直接修改sources.list文件，使用传统格式
     cat > /etc/apt/sources.list << EOF
 # 主要源

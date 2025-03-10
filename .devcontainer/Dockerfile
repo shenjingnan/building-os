@@ -30,22 +30,11 @@ RUN set -ex \
         curl \
         git \
         ca-certificates \
-        bluez \
-        ffmpeg \
-        libudev-dev \
-        libavformat-dev \
-        libavcodec-dev \
-        libavdevice-dev \
-        libavutil-dev \
-        libgammu-dev \
-        libswscale-dev \
-        libswresample-dev \
-        libavfilter-dev \
-        libpcap-dev \
-        libturbojpeg0 \
         libyaml-dev \
         libxml2 \
         cmake \
+        rustc \
+        cargo \
     # 清理apt缓存减小镜像大小
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
