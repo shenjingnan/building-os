@@ -29,9 +29,18 @@ RUN set -ex \
 RUN curl -sSL https://install.python-poetry.org | python3 - \
     && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
-# 复制后端项目依赖文件
-COPY apps/backend/pyproject.toml .
-COPY apps/backend/poetry.lock* ./ 2>/dev/null || true
+# 创建后端目录
+RUN mkdir -p /app/backend
+
+# 复制后端项目依赖文件到后端目录
+COPY apps/backend/pyproject.toml /app/backend/
+# 创建一个空的poetry.lock文件，如果源文件存在则会被覆盖
+RUN touch /app/backend/poetry.lock
+# 尝试复制poetry.lock文件（如果存在）
+COPY apps/backend/poetry.lock /app/backend/
+
+# 切换到后端目录
+WORKDIR /app/backend
 
 # 使用Poetry安装依赖并构建wheel包
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
@@ -91,10 +100,15 @@ RUN set -ex \
 RUN curl -sSL https://install.python-poetry.org | python3 - \
     && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
+# 创建后端目录
+RUN mkdir -p /app/backend
+
 # 从构建阶段复制wheels和项目文件
 COPY --from=backend-builder /app/wheels /wheels
-COPY --from=backend-builder /app/pyproject.toml .
-COPY --from=backend-builder /app/poetry.lock* ./ 2>/dev/null || true
+COPY --from=backend-builder /app/backend/pyproject.toml /app/backend/
+# 创建一个空的poetry.lock文件，如果源文件存在则会被覆盖
+RUN touch /app/backend/poetry.lock
+COPY --from=backend-builder /app/backend/poetry.lock /app/backend/
 
 # 安装依赖
 RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/*.whl \
