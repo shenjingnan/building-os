@@ -1,9 +1,8 @@
 """数据库模型定义"""
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.orm import relationship, declarative_base
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -17,7 +16,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     devices = relationship("DeviceModel", back_populates="owner")
 
@@ -33,6 +32,6 @@ class DeviceModel(Base):
     status = Column(String)
     properties = Column(JSON)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="devices")
