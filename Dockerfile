@@ -1,7 +1,7 @@
-# 构建阶段 - 后端
+# Backend build stage
 FROM python:3.12-slim AS backend-builder
 
-# 设置环境变量
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     POETRY_VERSION=1.7.1 \
@@ -9,13 +9,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     POETRY_VIRTUALENVS_IN_PROJECT=false \
     POETRY_NO_INTERACTION=1
 
-# 设置可靠的shell执行环境
+# Set reliable shell execution environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# 设置工作目录
+# Set working directory
 WORKDIR /app
 
-# 安装构建依赖（合并RUN命令以减少层数）
+# Install build dependencies (merge RUN commands to reduce layers)
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
@@ -25,49 +25,49 @@ RUN set -ex \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装Poetry
+# Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - \
     && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
-# 创建后端目录
+# Create backend directory
 RUN mkdir -p /app/backend
 
-# 复制后端项目依赖文件到后端目录
+# Copy backend project dependency files to backend directory
 COPY apps/backend/pyproject.toml /app/backend/
-# 创建一个空的poetry.lock文件，如果源文件存在则会被覆盖
+# Create an empty poetry.lock file, which will be overwritten if the source file exists
 RUN touch /app/backend/poetry.lock
-# 尝试复制poetry.lock文件（如果存在）
+# Try to copy poetry.lock file (if it exists)
 COPY apps/backend/poetry.lock /app/backend/
 
-# 切换到后端目录
+# Switch to backend directory
 WORKDIR /app/backend
 
-# 使用Poetry安装依赖并构建wheel包
+# Use Poetry to install dependencies and build wheel packages
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
     && pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt \
     && pip wheel --no-cache-dir --wheel-dir /app/wheels -e .
 
-# 前端构建阶段
+# Frontend build stage
 FROM node:20-slim AS frontend-builder
 
-# 设置工作目录
+# Set working directory
 WORKDIR /app
 
-# 安装pnpm
+# Install pnpm
 RUN npm install -g pnpm
 
-# 复制package.json和pnpm相关文件
+# Copy package.json and pnpm related files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
 COPY apps/frontend ./apps/frontend
 
-# 安装依赖并构建前端
+# Install dependencies and build frontend
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
-# 最终阶段
+# Final stage
 FROM python:3.12-slim
 
-# 设置环境变量
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
@@ -76,13 +76,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     POETRY_VIRTUALENVS_IN_PROJECT=false \
     POETRY_NO_INTERACTION=1
 
-# 设置可靠的shell执行环境
+# Set reliable shell execution environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# 设置工作目录
+# Set working directory
 WORKDIR /app
 
-# 安装运行时依赖（合并RUN命令以减少层数）
+# Install runtime dependencies (merge RUN commands to reduce layers)
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
@@ -96,35 +96,35 @@ RUN set -ex \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装Poetry
+# Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - \
     && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
-# 创建后端目录
+# Create backend directory
 RUN mkdir -p /app/backend
 
-# 从构建阶段复制wheels和项目文件
+# Copy wheels and project files from build stage
 COPY --from=backend-builder /app/wheels /wheels
 COPY --from=backend-builder /app/backend/pyproject.toml /app/backend/
-# 创建一个空的poetry.lock文件，如果源文件存在则会被覆盖
+# Create an empty poetry.lock file, which will be overwritten if the source file exists
 RUN touch /app/backend/poetry.lock
 COPY --from=backend-builder /app/backend/poetry.lock /app/backend/
 
-# 安装依赖
+# Install dependencies
 RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/*.whl \
     && rm -rf /wheels
 
-# 复制后端应用代码
+# Copy backend application code
 COPY apps/backend /app/backend/
 
-# 复制前端构建文件
+# Copy frontend build files
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 
-# 设置用户
+# Set up user
 RUN useradd -m appuser && \
     chown -R appuser:appuser /app
 
-# 安装并配置Caddy作为轻量级Web服务器（替代Nginx，可以以非root用户运行）
+# Install and configure Caddy as a lightweight web server (replaces Nginx, can run as non-root user)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     debian-keyring \
@@ -139,41 +139,41 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 创建Caddy配置文件
+# Create Caddy configuration file
 RUN mkdir -p /app/caddy
 COPY <<EOF /app/caddy/Caddyfile
 :80 {
-    # 前端静态文件
+    # Frontend static files
     root * /app/frontend/dist
     try_files {path} /index.html
     file_server
 
-    # 后端API代理
+    # Backend API proxy
     handle /api/* {
         reverse_proxy localhost:8000
     }
 }
 EOF
 
-# 确保appuser可以访问所有必要的文件
+# Ensure appuser can access all necessary files
 RUN chown -R appuser:appuser /app
 
 USER appuser
 
-# 暴露端口
+# Expose ports
 EXPOSE 80 8000
 
-# 创建启动脚本
+# Create startup script
 RUN mkdir -p /app/scripts
 COPY <<EOF /app/scripts/start.sh
 #!/bin/bash
-# 启动后端API服务
+# Start backend API service
 cd /app/backend && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 &
-# 启动Caddy
+# Start Caddy
 caddy run --config /app/caddy/Caddyfile
 EOF
 
 RUN chmod +x /app/scripts/start.sh
 
-# 启动命令
+# Startup command
 CMD ["/app/scripts/start.sh"]
