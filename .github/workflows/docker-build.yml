@@ -79,12 +79,12 @@ jobs:
         run: |
           cd apps/backend
           pip install -e .
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov httpx
       
       - name: 运行后端测试
         run: |
           cd apps/backend
-          pytest -xvs
+          python -m pytest tests/ -v
   
   # Docker构建测试
   docker-build-test:
