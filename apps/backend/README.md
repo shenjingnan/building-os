@@ -5,17 +5,20 @@ This is the backend service for the Smart Home System project. It provides APIs 
 ## Installation
 
 ```bash
+# Install Poetry (if not already installed)
+curl -sSL https://install.python-poetry.org | python3 -
+
 # Install dependencies
-uv pip install .
+poetry install
 
 # Install with development dependencies
-uv pip install ".[dev]"
+poetry install --with dev
 
-# Install in development mode
-uv pip install -e .
+# Install with test dependencies
+poetry install --with test
 
-# Install in development mode with development dependencies
-uv pip install -e ".[dev]"
+# Install with both development and test dependencies
+poetry install --with dev,test
 ```
 
 ## Features
@@ -26,16 +29,43 @@ uv pip install -e ".[dev]"
 
 ## Development
 
-This project uses uv for dependency management with dependencies defined in `pyproject.toml`.
+This project uses Poetry for dependency management with dependencies defined in `pyproject.toml`.
 
 To run the application:
 
 ```bash
-python main.py
+# Using Poetry
+poetry run python main.py
+
+# Or with the defined script
+poetry run server
+
+# Or with uvicorn directly
+poetry run uvicorn main:app --reload
 ```
 
-Or with uvicorn directly:
+## Testing
 
 ```bash
-uvicorn main:app --reload
+# Run tests
+poetry run pytest
+
+# Run tests with coverage
+poetry run pytest --cov=.
+```
+
+## Code Quality
+
+```bash
+# Format code with black
+poetry run black .
+
+# Sort imports with isort
+poetry run isort .
+
+# Lint code with flake8
+poetry run flake8 .
+
+# Type check with mypy
+poetry run mypy .
 ``` 

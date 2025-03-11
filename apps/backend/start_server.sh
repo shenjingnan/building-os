@@ -6,4 +6,4 @@ cd "$(dirname "$0")"
 
 # 启动uvicorn服务器
 echo "启动后端服务器..."
-exec python -m main
+exec poetry run python -m main

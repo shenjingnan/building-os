@@ -53,6 +53,18 @@ if [ -n "$PIP_MIRROR" ]; then
 index-url = $PIP_MIRROR
 EOF
     echo "pip mirror configuration completed"
+    
+    # Configure Poetry to use the same mirror
+    if command -v poetry &> /dev/null; then
+        echo "Configuring Poetry to use pip mirror: $PIP_MIRROR"
+        poetry source add --priority=primary mirrors $PIP_MIRROR
+        poetry config repositories.pypi $PIP_MIRROR
+        poetry config http-basic.pypi.username ""
+        poetry config http-basic.pypi.password ""
+        echo "Poetry mirror configuration completed"
+    else
+        echo "Poetry command not available, skipping Poetry mirror configuration"
+    fi
 fi
 
 # Configure npm to use mirror

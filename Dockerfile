@@ -3,7 +3,11 @@ FROM python:3.12-slim AS backend-builder
 
 # 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=1.7.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
+    POETRY_NO_INTERACTION=1
 
 # 设置可靠的shell执行环境
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -21,16 +25,18 @@ RUN set -ex \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装uv工具进行更快的依赖安装
-RUN pip install --no-cache-dir uv
+# 安装Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
 # 复制后端项目依赖文件
 COPY apps/backend/pyproject.toml .
-# 可选：如果有poetry.lock或其他锁文件，也复制它
 COPY apps/backend/poetry.lock* ./ 2>/dev/null || true
 
-# 使用uv构建wheel包
-RUN uv pip wheel --no-cache-dir --wheel-dir /app/wheels -e .
+# 使用Poetry安装依赖并构建wheel包
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
+    && pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt \
+    && pip wheel --no-cache-dir --wheel-dir /app/wheels -e .
 
 # 前端构建阶段
 FROM node:20-slim AS frontend-builder
@@ -55,7 +61,11 @@ FROM python:3.12-slim
 # 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONPATH=/app \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=1.7.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
+    POETRY_NO_INTERACTION=1
 
 # 设置可靠的shell执行环境
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -72,19 +82,22 @@ RUN set -ex \
         libsm6 \
         libxext6 \
         libgl1 \
+        curl \
+        ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装uv
-RUN pip install --no-cache-dir uv
+# 安装Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
 # 从构建阶段复制wheels和项目文件
 COPY --from=backend-builder /app/wheels /wheels
 COPY --from=backend-builder /app/pyproject.toml .
 COPY --from=backend-builder /app/poetry.lock* ./ 2>/dev/null || true
 
-# 使用uv安装依赖
-RUN uv pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/*.whl \
+# 安装依赖
+RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/*.whl \
     && rm -rf /wheels
 
 # 复制后端应用代码
@@ -141,7 +154,7 @@ RUN mkdir -p /app/scripts
 COPY <<EOF /app/scripts/start.sh
 #!/bin/bash
 # 启动后端API服务
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 &
+cd /app/backend && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 &
 # 启动Caddy
 caddy run --config /app/caddy/Caddyfile
 EOF

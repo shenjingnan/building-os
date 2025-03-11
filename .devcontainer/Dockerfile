@@ -6,7 +6,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=$PATH:./node_modules/.bin \
     NVM_VERSION="0.39.7" \
     NVM_DIR="/usr/local/nvm" \
-    SHELL=/bin/bash
+    SHELL=/bin/bash \
+    POETRY_VERSION=1.7.1 \
+    POETRY_HOME="/usr/local/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
+    POETRY_NO_INTERACTION=1
 
 # Set reliable shell execution environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -71,8 +75,10 @@ RUN set -ex \
     # Clean up temporary files
     && rm -f /tmp/.env
 
-# Install Python tools
-RUN pip3 install --no-cache-dir uv
+# Install Poetry for Python dependency management
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s $POETRY_HOME/bin/poetry /usr/local/bin/poetry \
+    && poetry --version
 
 # Add Node.js environment activation script
 RUN echo 'if [ -d "$NVM_DIR" ]; then\n\

@@ -178,11 +178,30 @@ fi
 # Set up Python virtual environment
 log_info "Setting up Python virtual environment..."
 export VIRTUAL_ENV="$HOME/.local/project-venv"
-if command -v uv >/dev/null 2>&1; then
-  log_info "Using uv to create virtual environment: $VIRTUAL_ENV"
-  uv venv "$VIRTUAL_ENV"
+
+# Ensure virtual environment directory exists
+mkdir -p "$(dirname "$VIRTUAL_ENV")"
+
+if command -v poetry >/dev/null 2>&1; then
+  log_info "Using Poetry to create virtual environment: $VIRTUAL_ENV"
+  poetry config virtualenvs.path "$HOME/.local"
+  poetry config virtualenvs.in-project false
 else
-  log_info "uv not installed, using python venv module to create virtual environment"
+  log_info "Poetry not installed, using python venv module to create virtual environment"
+  python -m venv "$VIRTUAL_ENV"
+fi
+
+# Verify virtual environment was created
+if [ ! -d "$VIRTUAL_ENV" ]; then
+  log_error "Failed to create virtual environment at $VIRTUAL_ENV"
+  mkdir -p "$VIRTUAL_ENV"
+  python -m venv "$VIRTUAL_ENV"
+fi
+
+if [ ! -f "$VIRTUAL_ENV/bin/activate" ]; then
+  log_error "Virtual environment activation script not found at $VIRTUAL_ENV/bin/activate"
+  log_info "Recreating virtual environment..."
+  rm -rf "$VIRTUAL_ENV"
   python -m venv "$VIRTUAL_ENV"
 fi
 
@@ -215,6 +234,14 @@ update_shell_config() {
     echo "export NVM_DIR=\"$NVM_DIR\"" >> "$config_file"
     echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"  # Load NVM" >> "$config_file"
     echo "[ -s \"\$NVM_DIR/bash_completion\" ] && . \"\$NVM_DIR/bash_completion\"  # Load NVM auto-completion" >> "$config_file"
+    echo "" >> "$config_file"
+  fi
+  
+  # Add Poetry configuration
+  if ! grep -q "POETRY_HOME=" "$config_file"; then
+    echo "# Poetry configuration" >> "$config_file"
+    echo "export POETRY_HOME=\"/usr/local/poetry\"" >> "$config_file"
+    echo "export PATH=\"\$POETRY_HOME/bin:\$PATH\"" >> "$config_file"
     echo "" >> "$config_file"
   fi
 }
@@ -253,30 +280,52 @@ fi
 log_info "Starting Python dependencies installation..."
 
 # Ensure virtual environment is activated
-if [ -d "$VIRTUAL_ENV" ]; then
+if [ -d "$VIRTUAL_ENV" ] && [ -f "$VIRTUAL_ENV/bin/activate" ]; then
   log_info "Activating Python virtual environment: $VIRTUAL_ENV"
   source "$VIRTUAL_ENV/bin/activate"
 else
-  log_warning "Virtual environment directory does not exist: $VIRTUAL_ENV"
+  log_warning "Virtual environment directory or activation script does not exist: $VIRTUAL_ENV"
   log_info "Recreating virtual environment..."
-  if command -v uv >/dev/null 2>&1; then
-    uv venv "$VIRTUAL_ENV"
+  mkdir -p "$VIRTUAL_ENV"
+  if command -v poetry >/dev/null 2>&1; then
+    poetry config virtualenvs.path "$HOME/.local"
+    poetry config virtualenvs.in-project false
   else
     python -m venv "$VIRTUAL_ENV"
   fi
-  source "$VIRTUAL_ENV/bin/activate"
+  
+  # Verify virtual environment was created successfully
+  if [ -f "$VIRTUAL_ENV/bin/activate" ]; then
+    source "$VIRTUAL_ENV/bin/activate"
+  else
+    log_error "Failed to create virtual environment activation script at $VIRTUAL_ENV/bin/activate"
+    log_info "Continuing without virtual environment activation..."
+  fi
 fi
 
-# Install uv (if not installed)
-if ! command -v uv >/dev/null 2>&1; then
-  log_info "Installing uv package manager..."
-  pip install uv
-  log_success "uv installation complete: $(uv --version)"
+# Install poetry (if not installed)
+if ! command -v poetry >/dev/null 2>&1; then
+  log_info "Installing Poetry..."
+  pip install poetry
+  log_success "Poetry installation complete"
 else
-  log_info "uv already installed: $(uv --version)"
+  log_info "Poetry already installed: $(poetry --version)"
 fi
 
 # Check backend project and install dependencies
 BACKEND_DIR="/workspaces/building-os/apps/backend"
-log_info "Using uv to install dependencies..."
-uv pip install -e $BACKEND_DIR
+if [ -d "$BACKEND_DIR" ]; then
+  log_info "Installing backend dependencies with Poetry..."
+  cd "$BACKEND_DIR"
+  if [ -f "pyproject.toml" ]; then
+    poetry install
+    log_success "Backend dependencies installed successfully"
+  else
+    log_warning "pyproject.toml not found in $BACKEND_DIR"
+  fi
+  cd - > /dev/null
+else
+  log_warning "Backend directory not found: $BACKEND_DIR"
+fi
+
+log_success "Environment setup complete!"
