@@ -92,7 +92,8 @@ RUN set -ex \
         libsm6=2:1.2.3-1 \
         libxext6=2:1.3.4-1+b1 \
         libgl1=1.6.0-1 \
-        curl=7.88.1-10+deb12u5 \
+        libcurl4=7.88.1-10+deb12u8 \
+        curl=7.88.1-10+deb12u8 \
         ca-certificates=20230311 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
