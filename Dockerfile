@@ -42,10 +42,11 @@ COPY apps/backend/poetry.lock /app/backend/
 # Switch to backend directory
 WORKDIR /app/backend
 
-# Use Poetry to install dependencies and build wheel packages
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes \
-    && pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt \
-    && pip wheel --no-cache-dir --wheel-dir /app/wheels -e .
+# Install dependencies using Poetry and create wheels
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --no-root \
+    && pip install --upgrade pip \
+    && pip wheel --no-cache-dir --wheel-dir /app/wheels $(poetry export -f requirements.txt --without-hashes | grep -v "^-e" | cut -d " " -f1)
 
 # Frontend build stage
 FROM node:20-slim AS frontend-builder
