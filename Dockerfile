@@ -56,7 +56,8 @@ FROM node:20-slim AS frontend-builder
 # Set environment variables to disable cache
 ENV NODE_ENV=production \
     NPM_CONFIG_CACHE=/tmp/npm-cache \
-    PNPM_HOME=/tmp/pnpm-store
+    PNPM_HOME=/tmp/pnpm-store \
+    HUSKY=0
 
 # Set working directory
 WORKDIR /app
@@ -69,7 +70,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
 COPY apps/frontend ./apps/frontend
 
 # Install dependencies and build frontend with no cache
-RUN pnpm install --frozen-lockfile --no-cache && \
+RUN pnpm install --frozen-lockfile --no-cache --ignore-scripts && \
     NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
