@@ -157,14 +157,6 @@ COPY <<EOF /app/caddy/Caddyfile
 }
 EOF
 
-# Ensure appuser can access all necessary files
-RUN chown -R appuser:appuser /app
-
-USER appuser
-
-# Expose ports
-EXPOSE 80 8000
-
 # Create startup script
 RUN mkdir -p /app/scripts
 COPY <<EOF /app/scripts/start.sh
@@ -175,7 +167,17 @@ cd /app/backend && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 &
 caddy run --config /app/caddy/Caddyfile
 EOF
 
+# Set execute permission for the startup script
 RUN chmod +x /app/scripts/start.sh
+
+# Ensure appuser can access all necessary files
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports
+EXPOSE 80 8000
 
 # Startup command
 CMD ["/app/scripts/start.sh"]
