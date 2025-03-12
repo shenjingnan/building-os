@@ -7,7 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     POETRY_VERSION=1.7.1 \
     POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=false \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    PIP_NO_CACHE_DIR=1
 
 # Set reliable shell execution environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -17,7 +18,7 @@ WORKDIR /app
 
 # Install build dependencies (merge RUN commands to reduce layers)
 RUN set -ex \
-    && apt-get update -o Acquire::http::No-Cache=True \
+    && apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false \
     && apt-get install -y --no-install-recommends \
         build-essential=12.9 \
         curl=7.88.1-10+deb12u8 \
@@ -43,7 +44,7 @@ COPY apps/backend/poetry.lock /app/backend/
 WORKDIR /app/backend
 
 # Install dependencies using Poetry and create wheels
-RUN poetry config virtualenvs.create false \
+RUN poetry config "virtualenvs.create" "false" \
     && poetry install --no-interaction --no-ansi --no-root \
     && pip install --no-cache-dir --upgrade pip \
     && poetry export -f requirements.txt --without-hashes > /app/requirements.txt \
@@ -52,18 +53,23 @@ RUN poetry config virtualenvs.create false \
 # Frontend build stage
 FROM node:20-slim AS frontend-builder
 
+# Set environment variables to disable cache
+ENV NODE_ENV=production \
+    NPM_CONFIG_CACHE=/tmp/npm-cache \
+    PNPM_HOME=/tmp/pnpm-store
+
 # Set working directory
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10.6.2
+# Install pnpm with no cache
+RUN npm install -g pnpm@10.6.2 --no-cache
 
 # Copy package.json and pnpm related files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
 COPY apps/frontend ./apps/frontend
 
-# Install dependencies and build frontend
-RUN pnpm install && \
+# Install dependencies and build frontend with no cache
+RUN pnpm install --frozen-lockfile --no-cache && \
     NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
@@ -76,7 +82,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     POETRY_VERSION=1.7.1 \
     POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=false \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    PIP_NO_CACHE_DIR=1
 
 # Set reliable shell execution environment
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -86,7 +93,7 @@ WORKDIR /app
 
 # Install runtime dependencies (merge RUN commands to reduce layers)
 RUN set -ex \
-    && apt-get update -o Acquire::http::No-Cache=True \
+    && apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false \
     && apt-get install -y --no-install-recommends \
         libopencv-dev \
         ffmpeg \
@@ -128,7 +135,7 @@ RUN useradd -m appuser && \
     chown -R appuser:appuser /app
 
 # Install and configure Caddy as a lightweight web server (replaces Nginx, can run as non-root user)
-RUN apt-get update && \
+RUN apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false && \
     apt-get install -y --no-install-recommends \
     debian-archive-keyring=2023.3+deb12u1 \
     apt-transport-https=2.6.1 \
@@ -137,7 +144,7 @@ RUN apt-get update && \
     gnupg=2.2.40-1.1 \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
-    && apt-get update \
+    && apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false \
     && apt-get install -y caddy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
