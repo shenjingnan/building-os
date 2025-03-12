@@ -19,9 +19,9 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        ca-certificates \
+        build-essential=12.9 \
+        curl=7.88.1-10+deb12u5 \
+        ca-certificates=20230311 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -88,13 +88,13 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
-        libopencv-dev \
-        ffmpeg \
-        libsm6 \
-        libxext6 \
-        libgl1 \
-        curl \
-        ca-certificates \
+        libopencv-dev=4.7.0+dfsg-7 \
+        ffmpeg=7:5.1.4-0+deb12u1 \
+        libsm6=2:1.2.3-1 \
+        libxext6=2:1.3.4-1+b1 \
+        libgl1=1.6.0-1 \
+        curl=7.88.1-10+deb12u5 \
+        ca-certificates=20230311 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -129,16 +129,16 @@ RUN useradd -m appuser && \
 # Install and configure Caddy as a lightweight web server (replaces Nginx, can run as non-root user)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    debian-keyring \
-    debian-archive-keyring \
-    apt-transport-https \
-    curl \
-    ca-certificates \
-    gnupg \
+    debian-keyring=2023.04.17 \
+    debian-archive-keyring=2023.3+deb12u1 \
+    apt-transport-https=2.6.1 \
+    curl=7.88.1-10+deb12u5 \
+    ca-certificates=20230311 \
+    gnupg=2.2.40-1.1 \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
     && apt-get update \
-    && apt-get install -y caddy \
+    && apt-get install -y caddy=2.7.6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

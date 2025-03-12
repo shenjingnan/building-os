@@ -31,14 +31,14 @@ RUN set -ex \
     # Update package index and install basic tools and system dependencies
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get -y install --no-install-recommends \
-        curl \
-        git \
-        ca-certificates \
-        libyaml-dev \
-        libxml2 \
-        cmake \
-        rustc \
-        cargo \
+        curl=7.88.1-10+deb12u5 \
+        git=1:2.39.2-1.1 \
+        ca-certificates=20230311 \
+        libyaml-dev=0.2.5-1 \
+        libxml2=2.9.14+dfsg-1.3~deb12u1 \
+        cmake=3.25.1-1 \
+        rustc=1.63.0+dfsg1-2 \
+        cargo=0.66.0-1 \
     # Clean apt cache to reduce image size
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
