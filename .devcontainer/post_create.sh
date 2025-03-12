@@ -1,5 +1,12 @@
 #!/bin/bash
-# post_create.sh - User-level environment setup script executed after container creation
+
+# Disable interactive prompts
+export DEBIAN_FRONTEND=noninteractive
+export PNPM_YES=true
+export CI=true
+export POETRY_NO_INTERACTION=1
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
 
 # Enable error tracking and pipeline error detection
 set -eo pipefail
@@ -175,89 +182,6 @@ else
   log_info "NVM not available, skipping Node.js installation"
 fi
 
-# Set up Python virtual environment
-log_info "Setting up Python virtual environment..."
-export VIRTUAL_ENV="$HOME/.local/project-venv"
-
-# Ensure virtual environment directory exists
-mkdir -p "$(dirname "$VIRTUAL_ENV")"
-
-if command -v poetry >/dev/null 2>&1; then
-  log_info "Using Poetry to create virtual environment: $VIRTUAL_ENV"
-  poetry config virtualenvs.path "$HOME/.local"
-  poetry config virtualenvs.in-project false
-else
-  log_info "Poetry not installed, using python venv module to create virtual environment"
-  python -m venv "$VIRTUAL_ENV"
-fi
-
-# Verify virtual environment was created
-if [ ! -d "$VIRTUAL_ENV" ]; then
-  log_error "Failed to create virtual environment at $VIRTUAL_ENV"
-  mkdir -p "$VIRTUAL_ENV"
-  python -m venv "$VIRTUAL_ENV"
-fi
-
-if [ ! -f "$VIRTUAL_ENV/bin/activate" ]; then
-  log_error "Virtual environment activation script not found at $VIRTUAL_ENV/bin/activate"
-  log_info "Recreating virtual environment..."
-  rm -rf "$VIRTUAL_ENV"
-  python -m venv "$VIRTUAL_ENV"
-fi
-
-# Update shell configuration files
-log_info "Updating shell configuration files..."
-
-# Create shell config update function
-update_shell_config() {
-  local config_file="$1"
-  local config_exists=false
-  
-  # Check if config file exists
-  if [ -f "$config_file" ]; then
-    config_exists=true
-  else
-    touch "$config_file"
-  fi
-  
-  # Add Python virtual environment path
-  if ! grep -q "VIRTUAL_ENV=\"$VIRTUAL_ENV\"" "$config_file"; then
-    echo "# Python virtual environment configuration" >> "$config_file"
-    echo "export VIRTUAL_ENV=\"$VIRTUAL_ENV\"" >> "$config_file"
-    echo "export PATH=\"\$VIRTUAL_ENV/bin:\$PATH\"" >> "$config_file"
-    echo "" >> "$config_file"
-  fi
-  
-  # Add NVM configuration
-  if ! grep -q "NVM_DIR=\"$NVM_DIR\"" "$config_file"; then
-    echo "# NVM configuration" >> "$config_file"
-    echo "export NVM_DIR=\"$NVM_DIR\"" >> "$config_file"
-    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"  # Load NVM" >> "$config_file"
-    echo "[ -s \"\$NVM_DIR/bash_completion\" ] && . \"\$NVM_DIR/bash_completion\"  # Load NVM auto-completion" >> "$config_file"
-    echo "" >> "$config_file"
-  fi
-  
-  # Add Poetry configuration
-  if ! grep -q "POETRY_HOME=" "$config_file"; then
-    echo "# Poetry configuration" >> "$config_file"
-    echo "export POETRY_HOME=\"/usr/local/poetry\"" >> "$config_file"
-    echo "export PATH=\"\$POETRY_HOME/bin:\$PATH\"" >> "$config_file"
-    echo "" >> "$config_file"
-  fi
-}
-
-# Update bash configuration
-update_shell_config "$HOME/.bashrc"
-log_info "Bash configuration updated"
-
-# Display Node.js and npm versions
-NODE_VERSION=$(node -v 2>/dev/null || echo "not installed")
-NPM_VERSION=$(npm -v 2>/dev/null || echo "not installed")
-log_success "Node.js environment setup complete!"
-log_info "Node.js version: $NODE_VERSION"
-log_info "npm version: $NPM_VERSION"
-log_info "Python virtual environment: $VIRTUAL_ENV"
-
 # ===== Project Dependencies Installation =====
 # Check project dependencies
 if command -v npm >/dev/null 2>&1; then
@@ -268,9 +192,18 @@ if command -v npm >/dev/null 2>&1; then
     log_info "pnpm already installed: $(pnpm --version)"
   fi
 
+  # Configure pnpm store
+  log_info "Configuring pnpm store..."
+  mkdir -p "$PNPM_HOME"
+  pnpm config set store-dir "$PNPM_HOME"
+  
+  # Ensure node_modules directory exists and has correct permissions
+  mkdir -p node_modules
+  chmod 755 node_modules
+
   if [ -f "package.json" ]; then
     log_info "Detected package.json, preparing to install project dependencies..."
-    pnpm install
+    pnpm install --no-strict-peer-dependencies
   fi
 else
   log_warning "npm not available, skipping pnpm installation and project dependencies installation"
@@ -278,30 +211,6 @@ fi
 
 # ===== Python Dependencies Installation =====
 log_info "Starting Python dependencies installation..."
-
-# Ensure virtual environment is activated
-if [ -d "$VIRTUAL_ENV" ] && [ -f "$VIRTUAL_ENV/bin/activate" ]; then
-  log_info "Activating Python virtual environment: $VIRTUAL_ENV"
-  source "$VIRTUAL_ENV/bin/activate"
-else
-  log_warning "Virtual environment directory or activation script does not exist: $VIRTUAL_ENV"
-  log_info "Recreating virtual environment..."
-  mkdir -p "$VIRTUAL_ENV"
-  if command -v poetry >/dev/null 2>&1; then
-    poetry config virtualenvs.path "$HOME/.local"
-    poetry config virtualenvs.in-project false
-  else
-    python -m venv "$VIRTUAL_ENV"
-  fi
-  
-  # Verify virtual environment was created successfully
-  if [ -f "$VIRTUAL_ENV/bin/activate" ]; then
-    source "$VIRTUAL_ENV/bin/activate"
-  else
-    log_error "Failed to create virtual environment activation script at $VIRTUAL_ENV/bin/activate"
-    log_info "Continuing without virtual environment activation..."
-  fi
-fi
 
 # Install poetry (if not installed)
 if ! command -v poetry >/dev/null 2>&1; then

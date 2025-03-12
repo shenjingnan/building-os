@@ -11,7 +11,8 @@
                     "args": ["-l", "-i", "-c"]
                 },
                 "env": {
-                    "PATH": "${env:PATH}:/usr/local/bin:/usr/bin:/bin:${env:HOME}/.npm-global/bin:${env:HOME}/.local/bin:${env:HOME}/.nvm/versions/node/*/bin:${env:NVM_BIN}"
+                    "PATH": "/usr/local/nvm/versions/node/v20.18.3/bin:${env:PATH}:/usr/local/bin:/usr/bin:/bin:${env:HOME}/.npm-global/bin:${env:HOME}/.local/bin",
+                    "NVM_DIR": "/usr/local/nvm"
                 }
             },
             "problemMatcher": [],
@@ -32,7 +33,8 @@
                     "args": ["-l", "-i", "-c"]
                 },
                 "env": {
-                    "PATH": "${env:PATH}:/usr/local/bin:/usr/bin:/bin:${env:HOME}/.npm-global/bin:${env:HOME}/.local/bin:${env:HOME}/.nvm/versions/node/*/bin:${env:NVM_BIN}"
+                    "PATH": "/usr/local/nvm/versions/node/v20.18.3/bin:${env:PATH}:/usr/local/bin:/usr/bin:/bin:${env:HOME}/.npm-global/bin:${env:HOME}/.local/bin",
+                    "NVM_DIR": "/usr/local/nvm"
                 }
             },
             "problemMatcher": [],
