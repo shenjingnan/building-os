@@ -62,9 +62,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
 COPY apps/frontend ./apps/frontend
 
 # Install dependencies and build frontend
-RUN pnpm install --frozen-lockfile
-# Disable Nx Daemon and increase Node memory limit
-RUN NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
+RUN pnpm install --frozen-lockfile && \
+    NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
 FROM python:3.12-slim-bookworm
@@ -88,8 +87,8 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
-        libopencv-dev=4.7.0+dfsg-8 \
-        ffmpeg=7:5.1.4-1+deb12u2 \
+        libopencv-dev \
+        ffmpeg \
         libsm6=2:1.2.3-1 \
         libxext6=2:1.3.4-1+b1 \
         libgl1=1.6.0-1 \
@@ -168,11 +167,9 @@ cd /app/backend && poetry run uvicorn main:app --host 0.0.0.0 --port 8000 &
 caddy run --config /app/caddy/Caddyfile
 EOF
 
-# Set execute permission for the startup script
-RUN chmod +x /app/scripts/start.sh
-
-# Ensure appuser can access all necessary files
-RUN chown -R appuser:appuser /app
+# Set execute permission for the startup script and ensure appuser can access all necessary files
+RUN chmod +x /app/scripts/start.sh && \
+    chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
