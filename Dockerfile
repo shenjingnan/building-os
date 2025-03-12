@@ -63,7 +63,8 @@ COPY apps/frontend ./apps/frontend
 
 # Install dependencies and build frontend
 RUN pnpm install --frozen-lockfile
-RUN pnpm build
+# Disable Nx Daemon and increase Node memory limit
+RUN NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
 FROM python:3.12-slim
