@@ -20,7 +20,7 @@ RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
         build-essential=12.9 \
-        curl=7.88.1-10+deb12u5 \
+        curl=7.88.1-10+deb12u8 \
         ca-certificates=20230311 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -88,8 +88,8 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True \
     && apt-get install -y --no-install-recommends \
-        libopencv-dev=4.7.0+dfsg-7 \
-        ffmpeg=7:5.1.4-0+deb12u1 \
+        libopencv-dev=4.7.0+dfsg-8 \
+        ffmpeg=7:5.1.4-1+deb12u2 \
         libsm6=2:1.2.3-1 \
         libxext6=2:1.3.4-1+b1 \
         libgl1=1.6.0-1 \
