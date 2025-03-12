@@ -45,8 +45,9 @@ WORKDIR /app/backend
 # Install dependencies using Poetry and create wheels
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root \
-    && pip install --upgrade pip \
-    && pip wheel --no-cache-dir --wheel-dir /app/wheels $(poetry export -f requirements.txt --without-hashes | grep -v "^-e" | cut -d " " -f1)
+    && pip install --no-cache-dir --upgrade pip \
+    && poetry export -f requirements.txt --without-hashes > /app/requirements.txt \
+    && pip wheel --no-cache-dir --wheel-dir /app/wheels -r /app/requirements.txt
 
 # Frontend build stage
 FROM node:20-slim AS frontend-builder
@@ -55,7 +56,7 @@ FROM node:20-slim AS frontend-builder
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.15.4
 
 # Copy package.json and pnpm related files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
