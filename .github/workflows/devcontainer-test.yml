@@ -58,8 +58,11 @@ jobs:
           cp -r package.json /tmp/workspace/ || true
           cp -r .nvmrc /tmp/workspace/ || true
           
+          # Set permissions before mounting
+          chmod +x /tmp/workspace/.devcontainer/post_create.sh || true
+          
           # Run post_create.sh script in container
-          docker run --rm -v /tmp/workspace:/workspace devcontainer-test bash -c "cd /workspace && chmod +x .devcontainer/post_create.sh && .devcontainer/post_create.sh"
+          docker run --rm -v /tmp/workspace:/workspace devcontainer-test bash -c "cd /workspace && .devcontainer/post_create.sh"
           
           echo "post_create.sh script test completed"
       
