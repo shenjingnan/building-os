@@ -95,7 +95,7 @@ WORKDIR /app
 RUN set -ex \
     && apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false \
     && apt-get install -y --no-install-recommends \
-        libopencv-dev \
+        libopencv-dev=4.5.4-5 \
         ffmpeg \
         libsm6=2:1.2.3-1 \
         libxext6=2:1.3.4-1+b1 \
