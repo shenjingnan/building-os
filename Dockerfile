@@ -118,8 +118,8 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/*.whl \
 # Copy backend application code
 COPY apps/backend /app/backend/
 
-# Copy frontend build files
-COPY --from=frontend-builder /app/dist /app/frontend/dist
+# Copy frontend build files - ensure we copy from the correct path (dist/apps/frontend)
+COPY --from=frontend-builder /app/dist/apps/frontend /app/frontend/dist
 
 # Set up user
 RUN useradd -m appuser && \
