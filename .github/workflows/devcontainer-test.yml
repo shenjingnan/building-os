@@ -47,7 +47,7 @@ jobs:
       - name: Verify Python environment
         run: |
           echo "Verifying Python environment..."
-          docker run --rm devcontainer-test bash -c "echo 'Python version:' && python --version && echo 'pip version:' && pip --version && echo 'uv version:' && uv --version"
+          docker run --rm devcontainer-test bash -c "echo 'Python version:' && python --version && echo 'pip version:' && pip --version && echo 'poetry version:' && poetry --version"
       
       - name: Test post_create.sh script
         run: |
