@@ -46,7 +46,7 @@ WORKDIR /app/backend
 # Install dependencies using Poetry and create wheels
 RUN poetry config "virtualenvs.create" "false" \
     && poetry install --no-interaction --no-ansi --no-root \
-    && pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir pip==25.0.1 \
     && poetry export -f requirements.txt --without-hashes > /app/requirements.txt \
     && pip wheel --no-cache-dir --wheel-dir /app/wheels -r /app/requirements.txt
 
@@ -145,7 +145,7 @@ RUN apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
     && apt-get update -o Acquire::http::No-Cache=True -o Acquire::Check-Valid-Until=false \
-    && apt-get install -y caddy \
+    && apt-get install -y --no-install-recommends caddy=2.6.2-5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
