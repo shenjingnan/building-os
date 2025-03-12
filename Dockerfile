@@ -1,5 +1,5 @@
 # Backend build stage
-FROM python:3.12-slim AS backend-builder
+FROM python:3.12-slim-bookworm AS backend-builder
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -67,7 +67,7 @@ RUN pnpm install --frozen-lockfile
 RUN NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
