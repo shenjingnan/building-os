@@ -56,14 +56,14 @@ FROM node:20-slim AS frontend-builder
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm@8.15.4
+RUN npm install -g pnpm@10.6.2
 
 # Copy package.json and pnpm related files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json .npmrc ./
 COPY apps/frontend ./apps/frontend
 
 # Install dependencies and build frontend
-RUN pnpm install --frozen-lockfile && \
+RUN pnpm install && \
     NODE_OPTIONS="--max-old-space-size=4096" NX_DAEMON=false pnpm build
 
 # Final stage
