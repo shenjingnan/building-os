@@ -129,16 +129,15 @@ RUN useradd -m appuser && \
 # Install and configure Caddy as a lightweight web server (replaces Nginx, can run as non-root user)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    debian-keyring=2023.04.17 \
     debian-archive-keyring=2023.3+deb12u1 \
     apt-transport-https=2.6.1 \
-    curl=7.88.1-10+deb12u5 \
+    curl=7.88.1-10+deb12u8 \
     ca-certificates=20230311 \
     gnupg=2.2.40-1.1 \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
     && apt-get update \
-    && apt-get install -y caddy=2.7.6 \
+    && apt-get install -y caddy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
