@@ -42,7 +42,7 @@ RUN set -ex \
     # Clean apt cache to reduce image size
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -f /tmp/setup_mirrors.sh
+    && rm -f /tmp/setup_mirrors.sh \
     # Keep .env file for subsequent steps
 
 # Install and configure NVM
