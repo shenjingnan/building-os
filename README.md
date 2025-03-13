@@ -1,5 +1,7 @@
 # ZapMyco
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=zapmyco&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=zapmyco)
+
 ## Introduction
 
 Powered by AI
